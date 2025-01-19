@@ -1,7 +1,8 @@
+
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-    name: { // Single field for full name as per the frontend form
+    fullname: { // Single field for full name as per the frontend form
         type: String,
         required: true
     },
@@ -18,10 +19,10 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    confirm: {
-        type: String,
-        required: true
-    },
+    // confirm: {
+    //     type: String,
+    //     required: true
+    // },
     pin: {
         type: Number,
         required: true
