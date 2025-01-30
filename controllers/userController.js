@@ -2,6 +2,7 @@ const STATIC_SALT = process.env.SALT_SECRET || "default_salt";
 const userModel = require('../models/userModels');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
+const asyncHandler = require("../middleware/async");
 
 // Function to generate hashed password
 function generatePassword(password) {
@@ -18,7 +19,7 @@ function validPassword(password, hash) {
 
 const createUser = async (req, res) => {
     console.log("Create user API hit");
-    const { fullname, phone, password,pin,device } = req.body;
+    const { fullname, phone, image,password,pin,device } = req.body;
 
     // Validation
     if (!fullname || !phone || !password ) {
@@ -50,6 +51,7 @@ const createUser = async (req, res) => {
             const newUser = new userModel({
             fullname,
             phone,
+            image,
             password: hash,  
             pin,
             device
@@ -130,9 +132,31 @@ const loginUser = async (req, res) => {
         });
     }
 };
+const uploadImage = asyncHandler(async (req, res, next) => {
+    console.log("🔥 File Received:", req.file);
+
+    if (!req.file) {
+        return res.status(400).json({ message: "Please upload a file" });
+    }
+
+    const user = await User.findById(req.user.id);  // Ensure `req.user` is set
+    if (!user) {
+        return res.status(404).json({ message: "User not found" });
+    }
+
+    user.image = req.file.filename;
+    await user.save();
+
+    res.status(200).json({
+        success: true,
+        message: "File uploaded successfully!",
+        filename: req.file.filename
+    });
+});
 
 
 module.exports = {
     createUser,
-    loginUser
+    loginUser,
+    uploadImage
 };
