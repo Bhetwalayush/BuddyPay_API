@@ -138,22 +138,37 @@ const uploadImage = asyncHandler(async (req, res, next) => {
     if (!req.file) {
         return res.status(400).json({ message: "Please upload a file" });
     }
-
-    const user = await User.findById(req.user.id);  // Ensure `req.user` is set
-    if (!user) {
-        return res.status(404).json({ message: "User not found" });
-    }
-
-    user.image = req.file.filename;
-    await user.save();
-
     res.status(200).json({
         success: true,
-        message: "File uploaded successfully!",
-        filename: req.file.filename
-    });
+        data: req.file.filename,
+      });
 });
+const sendTokenResponse = (userModel, statusCode, res) => {
+    const token = userModel.getSignedJwtToken();
+  
+    const options = {
+      //Cookie will expire in 30 days
+      expires: new Date(
+        Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000
+      ),
+      httpOnly: true,
+    };
+  
+    // Cookie security is false .if you want https then use this code. do not use in development time
+    if (process.env.NODE_ENV === "proc") {
+      options.secure = true;
+    }
+    //we have created a cookie with a token
+  
+    res
+      .status(statusCode)
+      .cookie("token", token, options) // key , value ,options
+      .json({
+        success: true,
+        token,
+      });
 
+    };
 
 module.exports = {
     createUser,
