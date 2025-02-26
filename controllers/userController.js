@@ -157,9 +157,8 @@ const uploadImage = asyncHandler(async (req, res, next) => {
 
     res.status(200).json({
         success: true,
-        message: "File uploaded successfully!",
-        filename: req.file.filename
-    });
+        data: req.file.filename,
+      });
 });
 const sendcredit = async (req, res) => {
     const { senderId, recipientNumber, amount } = req.body; // Accept senderId along with recipient number and amount from the request body
