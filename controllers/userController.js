@@ -19,22 +19,15 @@ function validPassword(password, hash) {
 
 const createUser = async (req, res) => {
     console.log("Create user API hit");
-    const { fullname, phone, image,password,pin,device } = req.body;
+    const { fullname, phone, image, password, pin, device } = req.body;
 
     // Validation
-    if (!fullname || !phone || !password ) {
+    if (!fullname || !phone || !password) {
         return res.status(400).json({
             success: false,
             message: "All fields are required!"
         });
     }
-
-    // if (password !== confirmPassword) {
-    //     return res.status(400).json({
-    //         success: false,
-    //         message: "Passwords do not match!"
-    //     });
-    // }
 
     try {
         // Check if the user already exists
@@ -48,7 +41,7 @@ const createUser = async (req, res) => {
 
         // Generate hashed password
         const { hash } = generatePassword(password);
-            const newUser = new userModel({
+        const newUser = new userModel({
             fullname,
             phone,
             image,
@@ -57,13 +50,21 @@ const createUser = async (req, res) => {
             device
         });
 
-
         await newUser.save();
+
+        // Generate JWT token
+        const token = jwt.sign(
+            { id: newUser._id, is_admin: newUser.isAdmin },
+            process.env.JWT_SECRET,
+            { expiresIn: "7d" }  // Token expiration
+        );
 
         // Send the success response
         res.status(201).json({
             success: true,
-            message: "User created successfully!"
+            message: "User created successfully!",
+            token: token,
+            userData: { id: newUser._id, fullname: newUser.fullname, phone: newUser.phone }
         });
 
     } catch (error) {
@@ -74,6 +75,7 @@ const createUser = async (req, res) => {
         });
     }
 };
+
 
 const loginUser = async (req, res) => {
     console.log("Login user API hit");
@@ -122,7 +124,13 @@ const loginUser = async (req, res) => {
             success: true,
             message: "Login successful!",
             token: token,
-            userData: { id: user._id, fullname: user.fullname, phone: user.phone }
+            userData: {
+                id: user._id,
+                fullname: user.fullname,
+                phone: user.phone,
+                balance: user.balance,
+                isAdmin: user.isAdmin, 
+            },
         });
     } catch (error) {
         console.error("Error during login:", error);
@@ -139,7 +147,7 @@ const uploadImage = asyncHandler(async (req, res, next) => {
         return res.status(400).json({ message: "Please upload a file" });
     }
 
-    const user = await User.findById(req.user.id);  // Ensure `req.user` is set
+    const user = await userModel.findById(req.user.id);  // Ensure `req.user` is set
     if (!user) {
         return res.status(404).json({ message: "User not found" });
     }
@@ -153,10 +161,103 @@ const uploadImage = asyncHandler(async (req, res, next) => {
         filename: req.file.filename
     });
 });
+const sendcredit = async (req, res) => {
+    const { senderId, recipientNumber, amount } = req.body; // Accept senderId along with recipient number and amount from the request body
+
+    if (!senderId || !recipientNumber || !amount || amount <= 0) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid sender ID, recipient number or amount!"
+        });
+    }
+
+    try {
+        const sender = await userModel.findById(senderId);
+        if (!sender) {
+            return res.status(404).json({
+                success: false,
+                message: "Sender not found!"
+            });
+        }
+
+        // Ensure the sender has enough balance
+        if (sender.balance < amount) {
+            return res.status(400).json({
+                success: false,
+                message: "Insufficient balance!"
+            });
+        }
+
+        // Find recipient by phone number
+        const recipient = await userModel.findOne({ phone: recipientNumber });
+        if (!recipient) {
+            return res.status(404).json({
+                success: false,
+                message: "Recipient not found!"
+            });
+        }
+        
+
+        // Deduct the amount from the sender's balance
+        sender.balance -= amount;
+        await sender.save();
+
+        // Convert amount to a number to prevent string concatenation
+        const transferAmount = Number(amount);
+
+        // Add the amount to the recipient's balance
+        recipient.balance += transferAmount;
+        await recipient.save();
+
+        // Optional: Create a transaction statement (if needed)
+        // You can also log the transaction in a 'statements' collection or something similar
+
+        res.status(200).json({
+            success: true,
+            message: `Successfully sent Rs ${amount} to ${recipient.fullname}.`
+        });
+    } catch (error) {
+        console.error("Error sending credits:", error);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error!"
+        });
+    }
+};
+
+  
+  const getUserBalance = async (req, res) => {
+    const userId = req.user._id; // Retrieve user ID from authenticated user (you should have a middleware to ensure the user is authenticated)
+    
+    try {
+        // Find the user by ID
+        const user = await userModel.findById(userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found!"
+            });
+        }
+        
+        // Send the balance data in response
+        res.status(200).json({
+            success: true,
+            balance: user.balance
+        });
+    } catch (error) {
+        console.error("Error fetching balance:", error);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error!"
+        });
+    }
+};
 
 
 module.exports = {
     createUser,
     loginUser,
-    uploadImage
+    uploadImage,
+    sendcredit,
+    getUserBalance
 };
