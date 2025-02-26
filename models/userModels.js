@@ -34,9 +34,13 @@ const userSchema = new mongoose.Schema({
     device: {
         type: String,
         required: true
-    }
+    },
+    balance: {
+        type: Number,
+        default: 0.0
+    },
     
-});
+},{ timestamps: true });
 
 const User = mongoose.model('User', userSchema);
 module.exports = User;
