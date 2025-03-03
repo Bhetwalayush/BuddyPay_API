@@ -26,7 +26,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/user', require('./routes/userRoutes'));
 app.use('/api/recharge', require('./routes/rechargeRoutes'));
 app.use('/api/statements', require('./routes/statementRoutes'));
-
+app.use('/uploads', express.static('public/uploads'));
 
 // Default route
 app.get("/", (req, res) => {
