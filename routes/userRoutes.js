@@ -1,9 +1,11 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModels');
 const express = require('express');
+const path = require('path');
 const router = express.Router();
 const upload = require("../middleware/uploads").default; 
 const userControllers = require('../controllers/userController');
+const authMiddleware = require('../middleware/auth'); 
 
 // Route for fetching all users (admin-only access)
 router.get('/', async (req, res) => {
@@ -41,9 +43,12 @@ router.post('/create', userControllers.createUser);
 router.post('/login', userControllers.loginUser);
 
 // Upload an image for a user
-router.post("/uploadImage", upload, userControllers.uploadImage);
+router.post("/uploads", upload, userControllers.uploadImage);
+
+router.post('/update-fingerprint/:userId', userControllers.updateFingerprint);
 
 router.post('/sendcredit', userControllers.sendcredit);
+router.get('/senduserdetail', userControllers.sendUserDetail);
 
 // Add route for getting the user's balance (assuming JWT authentication is required)
 router.get('/balance', async (req, res) => {
