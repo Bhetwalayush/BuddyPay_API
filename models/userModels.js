@@ -39,6 +39,10 @@ const userSchema = new mongoose.Schema({
         type: Number,
         default: 0.0
     },
+    fingerprint: {
+         type: String,
+          default: null 
+    },
     
 },{ timestamps: true });
 
