@@ -3,6 +3,7 @@ const userModel = require('../models/userModels');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const asyncHandler = require("../middleware/async");
+const sendEmail = require("../middleware/emailService");
 
 // Function to generate hashed password
 function generatePassword(password) {
@@ -19,7 +20,7 @@ function validPassword(password, hash) {
 
 const createUser = async (req, res) => {
     console.log("Create user API hit");
-    const { fullname, phone, image, password, pin, device } = req.body;
+    const { fullname, phone, image, password, pin, device,email } = req.body;
 
     // Validation
     if (!fullname || !phone || !password) {
@@ -47,7 +48,8 @@ const createUser = async (req, res) => {
             image,
             password: hash,  
             pin,
-            device
+            device,
+            email,
         });
 
         await newUser.save();
@@ -66,6 +68,11 @@ const createUser = async (req, res) => {
             token: token,
             userData: { id: newUser._id, fullname: newUser.fullname, phone: newUser.phone }
         });
+
+         // ✅ Send registration confirmation email
+        const emailSubject = "Account Created Successfully";
+        const emailText = `Hello ${fullname},\n\nYour account has been successfully created.\n\nThank you for registering!`;
+        await sendEmail(email, emailSubject, emailText);
 
     } catch (error) {
         console.error("Error creating user:", error);
@@ -129,6 +136,7 @@ const loginUser = async (req, res) => {
                 fullname: user.fullname,
                 phone: user.phone,
                 balance: user.balance,
+                image: user.image,
                 isAdmin: user.isAdmin, 
             },
         });
@@ -161,6 +169,7 @@ const uploadImage = asyncHandler(async (req, res, next) => {
       });
 });
 const sendcredit = async (req, res) => {
+    console.log("Send credit API hit");
     const { senderId, recipientNumber, amount } = req.body; // Accept senderId along with recipient number and amount from the request body
 
     if (!senderId || !recipientNumber || !amount || amount <= 0) {
@@ -224,7 +233,29 @@ const sendcredit = async (req, res) => {
     }
 };
 
-  
+const updateFingerprint = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { fingerprint } = req.body;
+
+        if (!fingerprint) {
+            return res.status(400).json({ message: "Fingerprint data is required" });
+        }
+
+        const user = await userModel.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        user.fingerprint = fingerprint;
+        await user.save();
+
+        res.status(200).json({ message: "Fingerprint updated successfully", user });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
   const getUserBalance = async (req, res) => {
     const userId = req.user._id; // Retrieve user ID from authenticated user (you should have a middleware to ensure the user is authenticated)
     
@@ -251,6 +282,32 @@ const sendcredit = async (req, res) => {
         });
     }
 };
+const sendUserDetail = async (req, res) => {
+    console.log("Send user detail API hit");
+    const userId = req.user._id;
+    try {
+        const user = await userModel.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found!" });
+        }
+        res.status(200).json({
+            success: true,
+            user: {
+                id: user._id,
+                fullname: user.fullname,
+                phone: user.phone,
+                image: user.image,
+                balance: user.balance,
+                isAdmin: user.isAdmin,
+                device: user.device,
+                createdAt: user.createdAt,
+            },
+        });
+    } catch (error) {
+        console.error("Error fetching user details:", error);
+        res.status(500).json({ success: false, message: "Internal server error!" });
+    }
+};
 
 
 module.exports = {
@@ -258,5 +315,7 @@ module.exports = {
     loginUser,
     uploadImage,
     sendcredit,
-    getUserBalance
+    getUserBalance,
+    sendUserDetail,
+    updateFingerprint
 };
