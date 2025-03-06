@@ -69,7 +69,7 @@ const createUser = async (req, res) => {
             userData: { id: newUser._id, fullname: newUser.fullname, phone: newUser.phone }
         });
 
-         // ✅ Send registration confirmation email
+        //  ✅ Send registration confirmation email
         const emailSubject = "Account Created Successfully";
         const emailText = `Hello ${fullname},\n\nYour account has been successfully created.\n\nThank you for registering!`;
         await sendEmail(email, emailSubject, emailText);
@@ -132,11 +132,13 @@ const loginUser = async (req, res) => {
             message: "Login successful!",
             token: token,
             userData: {
+                token: token,
                 id: user._id,
                 fullname: user.fullname,
                 phone: user.phone,
                 balance: user.balance,
                 image: user.image,
+                createdAt: user.createdAt,
                 isAdmin: user.isAdmin, 
             },
         });
@@ -148,26 +150,24 @@ const loginUser = async (req, res) => {
         });
     }
 };
-const uploadImage = asyncHandler(async (req, res, next) => {
+const uploadImage = async (req, res, next) => {
     console.log("🔥 File Received:", req.file);
 
     if (!req.file) {
         return res.status(400).json({ message: "Please upload a file" });
     }
 
-    const user = await userModel.findById(req.user.id);  // Ensure `req.user` is set
-    if (!user) {
-        return res.status(404).json({ message: "User not found" });
-    }
+    // const user = await userModel.findById(req.user.id);  // Ensure `req.user` is set
+    // if (!user) {
+    //     return res.status(404).json({ message: "User not found" });
+    // }
 
-    user.image = req.file.filename;
-    await user.save();
-
+  
     res.status(200).json({
         success: true,
         data: req.file.filename,
       });
-});
+}
 const sendcredit = async (req, res) => {
     console.log("Send credit API hit");
     const { senderId, recipientNumber, amount } = req.body; // Accept senderId along with recipient number and amount from the request body
@@ -223,6 +223,7 @@ const sendcredit = async (req, res) => {
         res.status(200).json({
             success: true,
             message: `Successfully sent Rs ${amount} to ${recipient.fullname}.`
+
         });
     } catch (error) {
         console.error("Error sending credits:", error);
@@ -257,6 +258,7 @@ const updateFingerprint = async (req, res) => {
 };
 
   const getUserBalance = async (req, res) => {
+    console("Get Balance API hit")
     const userId = req.user._id; // Retrieve user ID from authenticated user (you should have a middleware to ensure the user is authenticated)
     
     try {

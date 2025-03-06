@@ -9,6 +9,7 @@ const authMiddleware = require('../middleware/auth');
 
 // Route for fetching all users (admin-only access)
 router.get('/', async (req, res) => {
+    console.log("Get User API hit");
     const token = req.headers.authorization?.split(" ")[1]; // Extract token
     if (!token) {
         return res.status(401).json({ message: "No token provided" });
@@ -20,11 +21,6 @@ router.get('/', async (req, res) => {
 
         if (!user) {
             return res.status(404).json({ message: "User not found" });
-        }
-
-        if (!user.isAdmin) {
-            // Return error if the user is not an admin
-            return res.status(403).json({ message: "Forbidden: Admin access required" });
         }
 
         // Return data for admins
@@ -52,6 +48,7 @@ router.get('/senduserdetail', userControllers.sendUserDetail);
 
 // Add route for getting the user's balance (assuming JWT authentication is required)
 router.get('/balance', async (req, res) => {
+    console.log("Get Balance API hit")
     const token = req.headers.authorization?.split(" ")[1]; // Extract token
     if (!token) {
         return res.status(401).json({ message: "No token provided" });

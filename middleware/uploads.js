@@ -1,6 +1,6 @@
 import multer, { diskStorage } from "multer";
 import { extname } from "path";
-const maxSize = 2 * 1024 * 1024; // 2MB
+// const maxSize = 2 * 1024 * 1024; // 2MB
 
 const storage = diskStorage({
   destination: (req, file, cb) => {
@@ -22,7 +22,7 @@ const imageFileFilter = (req, file, cb) => {
 const upload = multer({
   storage: storage,
   fileFilter: imageFileFilter,
-  limits: { fileSize: maxSize },
-}).single("profilePicture"); // Ensure "profilePicture" is the correct field
+  // limits: { fileSize: maxSize },
+}).single("image"); // Ensure "profilePicture" is the correct field
 
 export default upload;

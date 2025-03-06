@@ -60,8 +60,8 @@ const createStatement = asyncHandler(async (req, res) => {
 
 // Function to get all statements for a user
 const getStatements = asyncHandler(async (req, res) => {
+  console.log("Get Statement API hit");
     const { userId } = req.params; // Get userId from the request URL
-  
     if (!userId) {
       return res.status(400).json({
         success: false,
